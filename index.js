@@ -51,19 +51,25 @@ app.post('/boxes', async (req,res) => {
     res.json(newBox);
 });
 
-app.post('/customers', async (req,res) => {
-    const newCustomer = req.body;
-    let responseStatus = (newCustomer.name) ? 200 : 400;
-    if (responseStatus === 200) {
-        newCustomer.id = parseInt(await redisClient.json.arrLen('customers', '$')) + 1;
-        await redisClient.json.arrAppend('customers', '$', newCustomer);
-    } else {
-        res.status(responseStatus);
-        res.send("Error: cannot create customer due to missing feilds");
+/*CUSTOMERS*/
+/*app.post('/customers', async (req,res) => {
+    let newCustomer = req.body;
+        response = await checkValidCustomer({redisClient, newCustomer});
+        res.status(response.status).send(response.body);
+});*/
+
+app.post('/customers', async (req, res) => {
+    let newCustomer = req.body;
+    try {
+        // Assuming redisClient.json.set() returns a promise
+        await redisClient.json.set(`customer:${newCustomer.phoneNumber}`, '.', newCustomer);
+        res.status(200).send('Customer saved successfully');
+    } catch (error) {
+        console.error('Error saving customer to Redis:', error);
+        res.status(500).send('Error saving customer');
     }
-    //res.status(responseStatus).send();
-    res.json(newCustomer);
 });
+
 
 app.get('/customers', async (req,res) => {
     let customers = await redisClient.json.get('customers', {path:'$'}); //gets boxes; without 'await' it returns a Promise to the frontend (that's bad)
