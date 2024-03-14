@@ -58,6 +58,7 @@ app.post('/boxes', async (req,res) => {
         res.status(response.status).send(response.body);
 });*/
 
+//Add Customer
 app.post('/customers', async (req, res) => {
     let newCustomer = req.body;
     try {
@@ -67,6 +68,34 @@ app.post('/customers', async (req, res) => {
     } catch (error) {
         console.error('Error saving customer to Redis:', error);
         res.status(500).send('Error saving customer');
+    }
+});
+
+/*ORDERS*/
+
+//Add Order
+app.post('/order', async (req, res) => {
+    let newOrder = req.body;
+    const timestamp = Date.now();
+    try {
+        // Assuming redisClient.json.set() returns a promise
+        await redisClient.json.set(`order:${newOrder.phoneNumber}-${timestamp}`, '.', newOrder);
+        res.status(200).send('Customer saved successfully');
+    } catch (error) {
+        console.error('Error saving customer to Redis:', error);
+        res.status(500).send('Error saving customer');
+    }
+});
+
+//Get Order
+app.get("/order/:orderId", async(req, res) => {
+    //get the order from the database
+    const orderId = req.params.orderId;
+    let order = await redisClient.json.get(`order:${orderId}`);
+    if (order === null) {
+        res.status(404).send("Order not found");
+    } else {
+        res.json(order);
     }
 });
 
