@@ -59,5 +59,3 @@ Resources:
           FromPort: 6379
           ToPort: 6379
           CidrIp: 0.0.0.0/0
-
-
