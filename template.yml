@@ -20,23 +20,23 @@ Resources:
 #            Path: /myendpoint
 #            Method: get
 
-  MyVPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
-
-  MySubnet:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref MyVPC
-      CidrBlock: 10.0.0.0/24
+#  MyVPC:
+#    Type: AWS::EC2::VPC
+#    Properties:
+#      CidrBlock: 10.0.0.0/16
+#
+#  MySubnet:
+#    Type: AWS::EC2::Subnet
+#    Properties:
+#      VpcId: !Ref MyVPC
+#      CidrBlock: 10.0.0.0/24
 
   MyElasticacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
       Description: Subnet group for ElastiCache
       SubnetIds:
-        - !Ref MySubnet
+        - subnet-077889a34a2e22bd3
 
   MyElasticacheRedis:
     Type: 'AWS::ElastiCache::CacheCluster'
@@ -53,7 +53,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Lambda function
-      VpcId: !Ref MyVPC
+      VpcId: vpc-0935dec4ed03d1912
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 6379
