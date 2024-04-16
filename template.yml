@@ -48,6 +48,9 @@ Resources:
       VpcSecurityGroupIds:
         - !GetAtt MySecurityGroup.GroupId
       CacheSubnetGroupName: !Ref MyElasticacheSubnetGroup
+  Outputs:
+    RedisEndpointAddress:
+      Value: !GetAtt MyElasticacheRedis.ConfigurationEndpoint.Address
 
   MySecurityGroup:
     Type: AWS::EC2::SecurityGroup
