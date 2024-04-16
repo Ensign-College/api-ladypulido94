@@ -1,11 +1,11 @@
 {
   "name": "api-ladypulido94",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "index-local.js",
   "scripts": {
     "test": "jest",
-    "dev": "nodemon index.js",
-    "start": "node index.js"
+    "dev": "nodemon index-local.js",
+    "start": "node index-local.js"
   },
   "author": "",
   "license": "ISC",

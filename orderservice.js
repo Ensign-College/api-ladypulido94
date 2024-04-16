@@ -15,9 +15,9 @@ const addOrder = async ({ redisClient, order }) => {
     throw new Error(`Customer ${customerKey} does not exist`);
   }
 };
-const getOrder = async ({ redisClient, orderId }) => {
+const getOrderService = async ({ redisClient, orderId }) => {
   const resultObject = await redisClient.json.get(`order:${orderId}`);
   return resultObject;
 };
 //module.exports = { addOrder, getOrder };
-module.exports = { addOrder, getOrder };
+module.exports = { addOrder, getOrderService };

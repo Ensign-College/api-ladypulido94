@@ -1,166 +1,155 @@
-/* COMMANDS:
-    npm run dev = run this program with automatic restarts on updates
-    node index.js = run this program
-    docker-compose up -d = runs docker in the background (deamon) & rebuilds containers (specified in docker-compose.yml)
-    http://localhost:3001/boxes - address it is running on
-*/
+const { addOrderItem, updateOrderItem, getOrderItemService, searchOrderItems } = require('./orderItems.js');
+const { addOrder, getOrderService } = require('./orderService.js');
 
-//require = import (import needs more steps to work)
-//express is a framework for node.js
-//it makes APIs - connects frontend to database backend
-
-const { addOrderItem, updateOrderItem, getOrderItem, searchOrderItems } = require('./orderItems.js');
-const { addOrder, getOrder } = require('./orderService.js');
-const express = require('express');
 const Redis = require('redis');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const fs = require("fs");//import the file system library
-const Schema = JSON.parse(fs.readFileSync("./orderItemSchema.json","utf8"));
 const Ajv = require("ajv");
-const ajv = new Ajv(); //create an ajv object to validate JSON
-
-const options = {
-    origin: 'http://localhost:3000' //allow frontend to call this URL for the backend
-}
+const fs = require("fs");
 
 const redisClient = Redis.createClient({
     url : `redis://localhost:6379`
 });
 
-const app = express(); //creates an express application
-const port = 3001;
+const Schema = JSON.parse(fs.readFileSync("./orderItemSchema.json","utf8"));
+const ajv = new Ajv();
 
-app.use(bodyParser.json());
-app.use(cors(options)); //allow frontend to call backend
+exports.handler = async (event, context) => {
+    // Extract the HTTP method and path from the event
+    const { httpMethod, path } = event;
 
-app.listen(port, ()=>{
-    redisClient.connect(); //connects to the redis database
-    console.log(`API is listening on port ${port}`);
-}); //listens for web requests from frontend on port 3000 (and doesn't stop)
+    // Initialize response object
+    let response;
 
-/* Using an API:
-    1. URL
-    2. function to return boxes
-    req = resquest from the browser
-    res = response to the bowser
-*/
-
-app.get('/boxes', async (req,res) => {
-    let boxes = await redisClient.json.get('boxes', {path:'$'}); //gets boxes; without 'await' it returns a Promise to the frontend (that's bad)
-    res.json(boxes[0]); //convert boxes to a string and send to browser
-}); //return boxes to user
-
-app.post('/boxes', async (req,res) => {
-    const newBox = req.body;
-    newBox.id = parseInt(await redisClient.json.arrLen('boxes', '$')) + 1;
-    await redisClient.json.arrAppend('boxes', '$', newBox); //saves the new JSON in Redis
-    res.json(newBox);
-});
-
-/*CUSTOMERS*/
-/*app.post('/customers', async (req,res) => {
-    let newCustomer = req.body;
-        response = await checkValidCustomer({redisClient, newCustomer});
-        res.status(response.status).send(response.body);
-});*/
-
-/*ORDERS*/
-//Add Order
-app.post('/orders', async (req, res) => {
- let order = req.body;
- //order details, include product quantity and shipping address
- let responseStatus = order.productQuantity && order.shippingAddress ? 200 : 400;
-
- if(responseStatus === 200) {
-   try {
-   await addOrder({ redisClient, order});
-   res.status(responseStatus).json(order);
-
-   } catch(error) {
-    console.error(error);
-    res.status(500).send("Internal Server Error");
-    return;
-   }
- } else {
-   res.status(responseStatus);
-   res.send(`Missing one of the fields: ${order.productQuantity ? "" : "productQuantity"
-   } ${order.shippingAddress ? "" : "ShippingAddress"}`);
- }
-
-});
-
-//Get Order
-app.get("/orders/:orderId", async(req, res) => {
-    //get the order from the database
-    const orderId = req.params.orderId;
-    let order = await getOrder({redisClient, orderId});
-    if (order === null) {
-        res.status(404).send("Order not found");
-    } else {
-        res.json(order);
-    }
-});
-
-/*ORDER ITEM*/
-//Add orderItem
-app.post("/orderItems", async (req, res) => {
-  try{
-    console.log("Schema:", Schema);
-    const validate = ajv.compile(Schema);
-    const valid = validate(req.body);
-
-    if(!valid){
-      return res.status(400).json({error: "Invalid request body"});
-    }
-    console.log("Request Body:", req.body);
-
-    //Calling addOrderItem function and storing the result
-    const orderItemId = await addOrderItem({
-      redisClient,
-      orderItem: req.body,
-    });
-
-    //Responding with the result
-    res
-      .status(201)
-      .json({orderItemId, message: "Order item added successfully"});
-  } catch(error) {
-    console.error("Error adding order item:", error);
-    res.status(500).json({error: "Internal server error"});
-  }
-})
-
-//Get orderItem
-app.get("/orderItems/:orderItemId", async(req, res) => {
-  try {
-  const orderItemId  = req.params.orderItemId;
-  const orderItem = await getOrderItem({ redisClient, orderItemId});
-  res.json(orderItem);
-  } catch (error) {
-  console.error("Error getting order item:", error);
-  res.status(500).json({error: "Internal server error"});
-  }
-});
-
-/*CUSTOMERS*/
-//Get Customer
-app.get('/customers', async (req,res) => {
-    let customers = await redisClient.json.get('customers', {path:'$'}); //gets boxes; without 'await' it returns a Promise to the frontend (that's bad)
-    res.json(customers[0]); //convert boxes to a string and send to browser
-}); //return boxes to user
-
-//Post Customer
-app.post('/customers', async (req, res) => {
-    let newCustomer = req.body;
     try {
-        // Assuming redisClient.json.set() returns a promise
+        switch (true) {
+            case httpMethod === 'GET' && path === '/boxes':
+                response = await getBoxes(event);
+                break;
+            case httpMethod === 'POST' && path === '/boxes':
+                response = await postBoxes(event);
+                break;
+            case httpMethod === 'POST' && path === '/orders':
+                response = await postOrders(event);
+                break;
+            case httpMethod === 'GET' && path.startsWith('/orders/'):
+                response = await getOrder(event);
+                break;
+            case httpMethod === 'POST' && path === '/orderItems':
+                response = await postOrderItem(event);
+                break;
+            case httpMethod === 'GET' && path.startsWith('/orderItems/'):
+                response = await getOrderItem(event);
+                break;
+            case httpMethod === 'GET' && path === '/customers':
+                response = await getCustomers(event);
+                break;
+            case httpMethod === 'POST' && path === '/customers':
+                response = await postCustomer(event);
+                break;
+            default:
+                response = { statusCode: 404, body: 'Not Found' };
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        response = { statusCode: 500, body: 'Internal Server Error' };
+    }
+
+    return response;
+};
+
+/*     Boxes     */
+/*---------------*/
+//Get boxes from database
+async function getBoxes(event) {
+    const boxes = await redisClient.json.get('boxes', {path:'$'});
+    return { statusCode: 200, body: JSON.stringify(boxes[0]) };
+}
+
+//Add boxes to database
+async function postBoxes(event) {
+    const newBox = JSON.parse(event.body);
+    newBox.id = parseInt(await redisClient.json.arrLen('boxes', '$')) + 1;
+    await redisClient.json.arrAppend('boxes', '$', newBox);
+    return { statusCode: 200, body: JSON.stringify(newBox) };
+}
+
+
+/*      Orders       */
+/*-------------------*/
+//Add an order to database
+async function postOrders(event) {
+    const order = JSON.parse(event.body);
+    const responseStatus = order.productQuantity && order.shippingAddress ? 200 : 400;
+
+    if (responseStatus === 200) {
+        try {
+            await addOrder({ redisClient, order });
+            return { statusCode: 200, body: JSON.stringify(order) };
+        } catch (error) {
+            console.error(error);
+            return { statusCode: 500, body: 'Internal Server Error' };
+        }
+    } else {
+        return { statusCode: responseStatus, body: `Missing one of the fields: ${order.productQuantity ? "" : "productQuantity"} ${order.shippingAddress ? "" : "ShippingAddress"}` };
+    }
+}
+
+//Get an order from database
+async function getOrder(event) {
+    const orderId = event.pathParameters.orderId;
+    const order = await getOrderService({ redisClient, orderId });
+    if (order === null) {
+        return { statusCode: 404, body: 'Order not found' };
+    } else {
+        return { statusCode: 200, body: JSON.stringify(order) };
+    }
+}
+
+/*     Order Items     */
+/*---------------------*/
+//Add order item to database
+async function postOrderItem(event) {
+    try {
+        const validate = ajv.compile(Schema);
+        const valid = validate(req.body);
+        if (!valid) {
+            return { statusCode: 400, body: JSON.stringify({ error: "Invalid request body" }) };
+        }
+        const orderItemId = await addOrderItem({ redisClient, orderItem: JSON.parse(event.body) });
+        return { statusCode: 201, body: JSON.stringify({ orderItemId, message: "Order item added successfully" }) };
+    } catch (error) {
+        console.error("Error adding order item:", error);
+        return { statusCode: 500, body: JSON.stringify({ error: "Internal server error" }) };
+    }
+}
+
+//Get order item from database
+async function getOrderItem(event) {
+    const orderItemId = event.pathParameters.orderItemId;
+    try {
+        const orderItem = await getOrderItemService({ redisClient, orderItemId });
+        return { statusCode: 200, body: JSON.stringify(orderItem) };
+    } catch (error) {
+        console.error("Error getting order item:", error);
+        return { statusCode: 500, body: JSON.stringify({ error: "Internal server error" }) };
+    }
+}
+
+/*     Customers     */
+/*------------------*/
+//Get customer from database
+async function getCustomers(event) {
+    const customers = await redisClient.json.get('customers', { path: '$' });
+    return { statusCode: 200, body: JSON.stringify(customers[0]) };
+}
+
+//Add customer to database
+async function postCustomer(event) {
+    const newCustomer = JSON.parse(event.body);
+    try {
         await redisClient.json.set(`customer:${newCustomer.phoneNumber}`, '.', newCustomer);
-        res.status(200).send('Customer saved successfully');
+        return { statusCode: 200, body: 'Customer saved successfully' };
     } catch (error) {
         console.error('Error saving customer to Redis:', error);
-        res.status(500).send('Error saving customer');
+        return { statusCode: 500, body: 'Error saving customer' };
     }
-});
-
-console.log("Hello World");
+}

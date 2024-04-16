@@ -42,7 +42,7 @@ const updateOrderItem = async ({ redisClient, orderItem }) => {
 };
 
 // Function to retrieve an order item from Redis
-const getOrderItem = async ({ redisClient, orderItemId }) => {
+const getOrderItemService = async ({ redisClient, orderItemId }) => {
   try {
     // Retrieve the order item from Redis
     const orderItem = await redisClient.json.get(`orderItem:${orderItemId}`);
@@ -69,5 +69,5 @@ const searchOrderItems = async ({ redisClient, query, key, isText }) => {
 };
 
 // Export functions for use in other files
-module.exports = { addOrderItem, updateOrderItem, getOrderItem, searchOrderItems };
+module.exports = { addOrderItem, updateOrderItem, getOrderItemService, searchOrderItems };
 module.exports.redisClient = redisClient;

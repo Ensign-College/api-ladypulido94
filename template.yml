@@ -59,3 +59,56 @@ Resources:
           FromPort: 6379
           ToPort: 6379
           CidrIp: 0.0.0.0/0
+
+  MyFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs14.x
+      CodeUri: ./
+      MemorySize: 128
+      Timeout: 30
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpointAddress
+      Events:
+        GetBoxes:
+          Type: Api
+          Properties:
+            Path: /boxes
+            Method: GET
+        PostBoxes:
+          Type: Api
+          Properties:
+            Path: /boxes
+            Method: POST
+        PostOrders:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: POST
+        GetOrder:
+          Type: Api
+          Properties:
+            Path: /orders/{orderId}
+            Method: GET
+        PostOrderItem:
+          Type: Api
+          Properties:
+            Path: /orderItems
+            Method: POST
+        GetOrderItem:
+          Type: Api
+          Properties:
+            Path: /orderItems/{orderItemId}
+            Method: GET
+        GetCustomers:
+          Type: Api
+          Properties:
+            Path: /customers
+            Method: GET
+        PostCustomer:
+          Type: Api
+          Properties:
+            Path: /customers
+            Method: POST
