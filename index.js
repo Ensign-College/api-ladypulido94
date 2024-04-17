@@ -3,14 +3,14 @@ const { addOrder, getOrderService } = require('./orderservice.js');
 
 const Redis = require('redis');
 const Ajv = require("ajv");
+const ajv = new Ajv();
 const fs = require("fs");
+const Schema = JSON.parse(fs.readFileSync("./orderItemSchema.json","utf8"));
 
 const redisClient = Redis.createClient({
     url : `redis://localhost:6379`
 });
 
-const Schema = JSON.parse(fs.readFileSync("./orderItemSchema.json","utf8"));
-const ajv = new Ajv();
 
 exports.handler = async (event, context) => {
     // Extract the HTTP method and path from the event
@@ -81,6 +81,7 @@ async function postOrders(event) {
     const responseStatus = order.productQuantity && order.shippingAddress ? 200 : 400;
 
     if (responseStatus === 200) {
+        await redisClient.connect();
         try {
             await addOrder({ redisClient, order });
             return { statusCode: 200, body: JSON.stringify(order) };
