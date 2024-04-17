@@ -8,7 +8,7 @@ const fs = require("fs");
 const Schema = JSON.parse(fs.readFileSync("./orderItemSchema.json","utf8"));
 
 const redisClient = Redis.createClient({
-    url : `redis://localhost:6379`
+    url : `redis://${process.env.REDIS_HOST}:6379`
 });
 
 
