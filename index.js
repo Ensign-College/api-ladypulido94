@@ -81,6 +81,7 @@ async function postOrders(event) {
     const responseStatus = order.productQuantity && order.shippingAddress ? 200 : 400;
 
     if (responseStatus === 200) {
+        await redisClient.connect();
         try {
             await addOrder({ redisClient, order });
             return { statusCode: 200, body: JSON.stringify(order) };
