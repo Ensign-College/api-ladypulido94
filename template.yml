@@ -36,7 +36,7 @@ Resources:
     Properties:
       Description: Subnet group for ElastiCache
       SubnetIds:
-        - subnet-077889a34a2e22bd3
+        - subnet-02c217f126c0ce1d5
 
   MyElasticacheRedis:
     Type: 'AWS::ElastiCache::CacheCluster'
@@ -53,7 +53,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Lambda function
-      VpcId: vpc-0935dec4ed03d1912
+      VpcId: vpc-066e6a637e37f2752
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 6379
