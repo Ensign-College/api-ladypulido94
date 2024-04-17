@@ -132,4 +132,4 @@ Resources:
           Properties:
             Path: /customers
             Method: POST
-      Role: !Ref LadyLambdaRole
+      Role: !GetAtt LadyLambdaRole.Arn
