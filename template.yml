@@ -36,7 +36,7 @@ Resources:
     Properties:
       Description: Subnet group for ElastiCache
       SubnetIds:
-        - subnet-0031412f48fd06e60
+        - subnet-077889a34a2e22bd3
 
   MyElasticacheRedis:
     Type: 'AWS::ElastiCache::CacheCluster'
@@ -53,12 +53,27 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Lambda function
-      VpcId: vpc-090699eb4f02b0d2d
+      VpcId: vpc-0935dec4ed03d1912
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 6379
           ToPort: 6379
-          CidrIp: 172.31.16.0/20
+          CidrIp: 0.0.0.0/0
+
+  LadyLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LadyLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
 
   MyFunction:
     Type: 'AWS::Serverless::Function'
@@ -71,6 +86,11 @@ Resources:
       Environment:
         Variables:
           REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt MySecurityGroup.GroupId
+        SubnetIds:
+          - subnet-077889a34a2e22bd3
       Events:
         GetBoxes:
           Type: Api
@@ -112,3 +132,4 @@ Resources:
           Properties:
             Path: /customers
             Method: POST
+      Role: !Ref LadyLambdaRole
