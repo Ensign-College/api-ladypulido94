@@ -1,5 +1,5 @@
 const { addOrderItem, updateOrderItem, getOrderItemService, searchOrderItems } = require('./orderItems.js');
-const { addOrder, getOrderService } = require('./orderService.js');
+const { addOrder, getOrderService } = require('./orderservice.js');
 
 const Redis = require('redis');
 const Ajv = require("ajv");
